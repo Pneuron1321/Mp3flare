@@ -136,8 +136,9 @@
     </div>
   </div>
 
-  <input type="file" id="fileA" accept="audio/*">
-  <input type="file" id="fileB" accept="audio/*">
+  <!-- без accept: iOS красит серым файлы с неопознанным типом (ogg/opus из телеграма) и все видео; фильтрует сам декодер -->
+  <input type="file" id="fileA">
+  <input type="file" id="fileB">
 
 <script>
 /* =========================================================================
@@ -296,7 +297,7 @@ async function loadFile(id, file){
   document.getElementById('name'+id).textContent='декодирую…';
   let audio;
   try { audio = await AUDIO.ctx.decodeAudioData(await file.arrayBuffer()); }
-  catch(err){ document.getElementById('name'+id).textContent='не удалось прочитать файл'; return; }
+  catch(err){ document.getElementById('name'+id).textContent='формат не декодируется — конвертни в mp3 / m4a / wav'; return; }
   const L = new Float32Array(audio.getChannelData(0));
   const R = audio.numberOfChannels>1 ? new Float32Array(audio.getChannelData(1)) : new Float32Array(L);
   d.peaks = computePeaks(L,R,900);
@@ -524,7 +525,7 @@ document.querySelectorAll('.wave-wrap').forEach(wrap=>{
 
 // drag&drop: левая половина окна -> A, правая -> B
 ['dragover','drop'].forEach(t=> document.addEventListener(t,e=>e.preventDefault()));
-document.addEventListener('drop', e=>{ const f=[...(e.dataTransfer?.files||[])].find(f=>f.type.startsWith('audio')); if(!f) return;
+document.addEventListener('drop', e=>{ const fs=[...(e.dataTransfer?.files||[])]; const f=fs.find(x=>/^(audio|video)\//.test(x.type))||fs[0]; if(!f) return;
   const id = (e.clientX < window.innerWidth/2) ? 'A' : 'B'; loadFile(id,f); });
 
 window.addEventListener('resize', ()=>{ resize3D(); for(const id in decks){ if(decks[id].peaks) buildWaveCache(decks[id]); else fit(decks[id].wave); } });
